@@ -1,8 +1,7 @@
 import gym
 import minerl # this will look unused but it is needed to fetch the environment!
 from stable_baselines3 import PPO
-#from wrapper import MineRLWrapper
-from tree_wrapper import MineRLTreeWrapper
+from wrapper import MineRLWrapper
 from feature_extractor import MineRLFeatureExtractor
 from sys import argv
 import os.path
@@ -11,7 +10,7 @@ import os.path
 # Create wrapped env
 def make_minerl_env():
     raw = gym.make("MineRLObtainDiamondShovel-v0")
-    return MineRLTreeWrapper(raw)
+    return MineRLWrapper(raw)
 
 env = make_minerl_env()
 print("Succesfully created env")

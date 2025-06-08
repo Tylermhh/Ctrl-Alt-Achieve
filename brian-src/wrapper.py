@@ -1,6 +1,6 @@
 import gym
 import numpy as np
-import torch as th
+import torch
 import torch.nn.functional as F
 from gym import spaces
 
@@ -9,7 +9,7 @@ class MineRLWrapper(gym.Wrapper):
     def __init__(self, env, camera_bins=360):
         super().__init__(env)
 
-        # --- button list & camera bins ---
+        # Button list and discrete camera bins for actions
         self.buttons = [
             "ESC","attack","back","drop","forward",
             "hotbar.1","hotbar.2","hotbar.3","hotbar.4","hotbar.5",
@@ -26,7 +26,7 @@ class MineRLWrapper(gym.Wrapper):
             [2] * len(self.buttons) + [camera_bins, camera_bins]
         )
 
-        # Flat observation space to pass to model
+        # Flattened observation space to pass to model
         inv_dim = len(self.env.observation_space['inventory'])
         self.observation_space = spaces.Dict({
             "image": spaces.Box(0.0, 1.0, shape=(1, 84, 84), dtype=np.float32),
@@ -49,9 +49,8 @@ class MineRLWrapper(gym.Wrapper):
         return self._process_obs(raw_obs)
 
     def step(self, action: np.ndarray):
-        # Unpack flat MultiDiscrete → MineRL dict
+        # Unpack flat MultiDiscrete into MineRL dict
         d = self._unflatten_action(action)
-        #d["inventory"] = 0
 
         raw_obs, _, done, info = self.env.step(d)
         self._last_raw_obs = raw_obs
@@ -79,7 +78,7 @@ class MineRLWrapper(gym.Wrapper):
             # Overwrite invalid camera actions
             cam = np.array([0.0, 0.0], dtype=np.float32)
         else:
-            # Map index → angle in [-180,180]
+            # Map index to angle in [-180,180]
             cam = (cam_idx / (self.camera_bins - 1)) * 360.0 - 180.0
             cam = cam.astype(np.float32)
             cam = np.clip(cam, -180.0, 180.0)
@@ -93,7 +92,7 @@ class MineRLWrapper(gym.Wrapper):
     def _process_obs(self, obs):
         # Convert image to grayscale, 84x84
         img = obs['pov'].astype(np.float32) / 255.0
-        t = th.tensor(img).permute(2,0,1)[None]  # (1,3,H,W)
+        t = torch.tensor(img).permute(2,0,1)[None]  # (1,3,H,W)
         small = F.interpolate(t, (84,84), mode='bilinear').mean(1, keepdim=True)
         gray = small.numpy().astype(np.float32)    # (1,1,84,84)
 
