@@ -43,7 +43,11 @@ class MineRLWrapper(gym.Wrapper):
            'diamond_shovel':2048
         }
 
+        self.inv_frames = 0
+
     def reset(self, **kwargs):
+        self.inv_frames = 0
+
         raw_obs = self.env.reset(**kwargs)
         self._last_raw_obs = raw_obs
         return self._process_obs(raw_obs)
@@ -60,6 +64,7 @@ class MineRLWrapper(gym.Wrapper):
 
         # Compute shaped reward
         reward = self._shape_reward()
+        #print(f"Inv frames: {self.inv_frames}")
 
         return obs, reward, done, info
 
@@ -87,18 +92,30 @@ class MineRLWrapper(gym.Wrapper):
         # Rebuild MineRL action dict
         action_dict = {name: int(btn_vals[i]) for i, name in enumerate(self.buttons)}
         action_dict["camera"] = cam.astype(np.float32)
+
+        # disincentivize repeatedly opening inventory
+        if action_dict["inventory"] == 1:
+            self.inv_frames += 1
+        else:
+            self.inv_frames = 0
+
         return action_dict
 
     def _process_obs(self, obs):
-        # Convert image to grayscale, 84x84
+        #Convert POV image to grayscale, 84x84
+        # Normalize pixels
         img = obs['pov'].astype(np.float32) / 255.0
-        t = torch.tensor(img).permute(2,0,1)[None]  # (1,3,H,W)
-        small = F.interpolate(t, (84,84), mode='bilinear').mean(1, keepdim=True)
-        gray = small.numpy().astype(np.float32)    # (1,1,84,84)
+        # Create torch tensor
+        tensor = torch.tensor(img).permute(2,0,1)[None]  # (1,3,H,W)
+        # Downsample to 84x84 grayscale
+        downsampled_tensor = F.interpolate(tensor, (84,84), mode='bilinear').mean(1, keepdim=True)
+        # Convert back to numpy
+        result = downsampled_tensor.numpy().astype(np.float32)    # (1,1,84,84)
 
         # Vectorize inventory
         inv = np.array(list(obs['inventory'].values()), dtype=np.float32)
-        return {"image": gray, "inv": inv}
+
+        return {"image": result, "inv": inv}
 
     def _shape_reward(self) -> float:
         # Clean inventory to contain only items that yield reward
@@ -108,5 +125,7 @@ class MineRLWrapper(gym.Wrapper):
         # Calculate reward
         reward = float(sum(self.reward_map[item]
                          for item in inv.keys()))
+
+        reward -= 0.2 * self.inv_frames
 
         return reward
