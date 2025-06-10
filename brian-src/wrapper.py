@@ -64,7 +64,6 @@ class MineRLWrapper(gym.Wrapper):
 
         # Compute shaped reward
         reward = self._shape_reward()
-        #print(f"Inv frames: {self.inv_frames}")
 
         return obs, reward, done, info
 
@@ -93,7 +92,7 @@ class MineRLWrapper(gym.Wrapper):
         action_dict = {name: int(btn_vals[i]) for i, name in enumerate(self.buttons)}
         action_dict["camera"] = cam.astype(np.float32)
 
-        # disincentivize repeatedly opening inventory
+        # Keep track of opening inventory
         if action_dict["inventory"] == 1:
             self.inv_frames += 1
         else:
@@ -123,9 +122,12 @@ class MineRLWrapper(gym.Wrapper):
                if key in self.reward_map and value > 0}
 
         # Calculate reward
+        # from items (default values from base env)
         reward = float(sum(self.reward_map[item]
                          for item in inv.keys()))
 
+        # from opening inventory
+        # Discourage excessive inventory opening
         reward -= 0.2 * self.inv_frames
 
         return reward
