@@ -1,5 +1,5 @@
 import gym
-import minerl # this will look unused but it is needed to fetch the environment!
+import minerl # This will look unused but it is needed to fetch the environment!
 import logging
 
 logging.basicConfig(level=logging.DEBUG)
@@ -12,7 +12,7 @@ done = False
 
 while not done:
     # Take a random action
-    #action = env.action_space.sample()
+    # action = env.action_space.sample()
     action = {"forward": 1, "jump": 1}
     # In BASALT environments, sending ESC action will end the episode
     # Lets not do that

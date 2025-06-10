@@ -1,5 +1,5 @@
 import gym
-import minerl # this will look unused but it is needed to fetch the environment!
+import minerl # This will look unused but it is needed to fetch the environment!
 from stable_baselines3 import PPO
 from wrapper import MineRLWrapper
 from feature_extractor import MineRLFeatureExtractor
@@ -23,11 +23,13 @@ def train(model_name: str, time_steps: int=2_000_000) -> None:
     :param str model_name: File name to which to save the model
     :param int time_steps: Number of time steps to run training, default: 2_000_000
     """
-    if os.path.exists(model_name+".zip"):
+    if os.path.exists(model_name):
         # Load model
         model = PPO.load(model_name, env=env)
         print(f'============Loaded pre-existing model "{model_name}"============')
     else:
+        model_name += ".zip"
+
         # Define policy with custom feature extractor
         policy_kwargs = dict(
             features_extractor_class=MineRLFeatureExtractor,
@@ -108,15 +110,23 @@ def inference(model_name: str, time_steps: int=500) -> None:
             print(f"  {item}: {count}")
 
 if __name__ == "__main__":
-    if len(argv) < 4 or (len(argv) >= 4 and not (argv[1] in ['T', 'I'] and argv[2].isnumeric())):
+    try:
+        # Parse command line args
+        if len(argv) < 4 or (len(argv) >= 4 and not (argv[1] in ['T', 'I'] and argv[2].isnumeric())):
+            raise ValueError("Invalid command line arguments")
+
+        time_steps = int(argv[2])
+        
+        model_name = argv[3]
+
+        if argv[1] == 'T':
+            train(model_name, time_steps)
+        elif argv[1] == 'I':
+            inference(model_name, time_steps)
+    except Exception as e:
+        print(f"Exception occured:\n{e}\n")
         print("Usage: python agent.py <T | I> <time steps> <model name>")
-        exit()
-
-    time_steps = int(argv[2])
-    
-    model_name = argv[3]
-
-    if argv[1] == 'T':
-        train(model_name, time_steps)
-    elif argv[1] == 'I':
-        inference(model_name, time_steps)
+        print("T = train, I = inference")
+        print("<time steps> must be a positive integer and <model name> must " \
+            "exclude file extension if training an new model. File extension will default to .zip.")
+        exit(1)
