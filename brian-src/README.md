@@ -41,6 +41,8 @@ for humans, so a GUI window will open showing the POV of the agent in the minecr
 is essentially treated as a video stream from the agent's POV, and you cannot act on it other than to zoom 
 the video in or out.
 
+![MineRL Render](minerl_render.png "MineRL Render")
+
 * Note: after starting the script, you may see this warning:
 
   \<frozen runpy>:128: RuntimeWarning: 'minerl.utils.process_watcher' found in sys.modules after import of package 'minerl.utils', but prior to execution of 'minerl.utils.process_watcher'; this may result in unpredictable behaviour"
